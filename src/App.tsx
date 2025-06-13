@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Agent, Message, Module } from './types';
+import { Message, Module } from './types'; // Agent removed
 import { modules } from './data/modules';
 import { generateMockResponse } from './data/mockResponses';
 import ModuleSelector from './components/ModuleSelector';
-import AgentSelector from './components/AgentSelector';
+import HistoryList from './components/HistoryList'; // Import HistoryList
+// AgentSelector import removed
 import ChatInterface from './components/ChatInterface';
 import LoginPage from './components/LoginPage';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -13,7 +14,7 @@ import { User } from 'firebase/auth';
 
 function App() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  // selectedAgent state removed
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -28,16 +29,13 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    // Clear messages when switching agents
-    setMessages([]);
-  }, [selectedAgent]);
+  // useEffect for selectedAgent removed
 
   const handleLogout = async () => {
     try {
       await logOut();
       setSelectedModule(null);
-      setSelectedAgent(null);
+      // setSelectedAgent(null) removed;
       setMessages([]);
     } catch (error) {
       console.error('Logout failed:', error);
@@ -46,20 +44,45 @@ function App() {
 
   const handleSelectModule = (module: Module) => {
     setSelectedModule(module);
-    setSelectedAgent(null);
+    // setSelectedAgent(null) removed;
+    const storageKey = `chatHistory_${module.id}`;
+    const storedMessages = localStorage.getItem(storageKey);
+    if (storedMessages) {
+      try {
+        const parsedMessages = JSON.parse(storedMessages) as Message[];
+        // Convert timestamp strings back to Date objects
+        const messagesWithDateObjects = parsedMessages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }));
+        setMessages(messagesWithDateObjects);
+      } catch (error) {
+        console.error("Failed to parse messages from localStorage:", error);
+        setMessages([]);
+      }
+    } else {
+      setMessages([]);
+    }
   };
 
-  const handleSelectAgent = (agent: Agent) => {
-    setSelectedAgent(agent);
-  };
+  // handleSelectAgent function removed
 
-  const handleBackToModules = () => {
-    setSelectedModule(null);
-    setSelectedAgent(null);
+  // handleBackToModules function removed
+
+  const handleSelectHistory = (moduleId: string) => {
+    const moduleToSelect = modules.find(m => m.id === moduleId);
+    if (moduleToSelect) {
+      handleSelectModule(moduleToSelect); // This will also load messages
+    } else {
+      console.warn(`Module with ID ${moduleId} not found from history selection.`);
+      // Optionally, clear selection or show an error
+      // setSelectedModule(null);
+      // setMessages([]);
+    }
   };
 
   const handleSendMessage = (content: string) => {
-    if (!selectedAgent) return;
+    if (!selectedModule) return; // Changed from selectedAgent to selectedModule
 
     // Add user message
     const userMessage: Message = {
@@ -70,12 +93,30 @@ function App() {
       type: 'text'
     };
 
+    // Save user message to localStorage
+    if (selectedModule) {
+      const storageKey = `chatHistory_${selectedModule.id}`;
+      const currentMessagesRaw = localStorage.getItem(storageKey);
+      const currentMessages: Message[] = currentMessagesRaw ? JSON.parse(currentMessagesRaw) : [];
+      localStorage.setItem(storageKey, JSON.stringify([...currentMessages, userMessage]));
+    }
+
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
     // Simulate AI response delay
     setTimeout(() => {
-      const agentResponse = generateMockResponse(selectedAgent.id, content);
+      const agentResponse = generateMockResponse(selectedModule ? selectedModule.id : "general", content); // Changed from selectedAgent.id
+
+      // Save agent response to localStorage
+      if (selectedModule) {
+        const storageKey = `chatHistory_${selectedModule.id}`;
+        const currentMessagesRaw = localStorage.getItem(storageKey);
+        // Ensure user message was saved, then add agent response
+        const currentMessages: Message[] = currentMessagesRaw ? JSON.parse(currentMessagesRaw) : [userMessage];
+        localStorage.setItem(storageKey, JSON.stringify([...currentMessages, agentResponse]));
+      }
+
       setMessages(prev => [...prev, agentResponse]);
       setIsTyping(false);
     }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
@@ -140,32 +181,45 @@ function App() {
 
       {/* Main Content */}
       <div className="mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(80vh)]">
-          {/* Module/Agent Selector */}
-          <div className="lg:col-span-1 set-height">
-            {!selectedModule ? (
-              <ModuleSelector
-                modules={modules}
-                selectedModule={selectedModule}
-                onSelectModule={handleSelectModule}
-              />
+        <div className="flex h-[calc(80vh)] gap-8"> {/* Changed to flex layout */}
+          {/* Sidebar */}
+          <div className="w-1/4">
+            {selectedModule ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
+                <h2 className="text-xl font-semibold mb-4 text-gray-800">{selectedModule.name}</h2>
+                <p className="text-gray-600 mb-4 text-sm">
+                  Module selected. Agent selection will be re-integrated later. For now, you can interact with the module as a whole.
+                </p>
+                {/* Removed fixed button from here to allow HistoryList to be part of the scroll / layout */}
+                <button
+                  onClick={() => {
+                    setSelectedModule(null);
+                    setMessages([]); // Clear messages when going back
+                  }}
+                  className="mt-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                >
+                  Back to Module Selection
+                </button>
+              </div>
             ) : (
-              <AgentSelector
-                agents={selectedModule.agents}
-                selectedAgent={selectedAgent}
-                onSelectAgent={handleSelectAgent}
-                onBack={handleBackToModules}
-                moduleName={selectedModule.name}
-              />
+              // Wrapper for ModuleSelector and HistoryList when no module is selected
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col space-y-4 overflow-y-auto">
+                <ModuleSelector
+                  modules={modules}
+                  selectedModule={selectedModule}
+                  onSelectModule={handleSelectModule}
+                />
+                <HistoryList onSelectHistory={handleSelectHistory} modules={modules} />
+              </div>
             )}
           </div>
 
-          {/* Chat Interface */}
-          <div className="lg:col-span-3 set-height">
+          {/* Chat Interface Panel */}
+          <div className="flex-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full overflow-hidden">
               <ChatInterface
                 messages={messages}
-                selectedAgent={selectedAgent}
+                selectedAgent={null} // selectedAgent passed as null
                 selectedModule={selectedModule}
                 onSendMessage={handleSendMessage}
                 isTyping={isTyping}
