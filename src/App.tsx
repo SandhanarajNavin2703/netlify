@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Message, Module } from './types'; // Agent removed
-import { modules } from './data/modules';
-import { generateMockResponse } from './data/mockResponses';
-import ModuleSelector from './components/ModuleSelector';
-import HistoryList from './components/HistoryList'; // Import HistoryList
+import React, { useState, useEffect } from "react";
+import { Message, Module } from "./types"; // Agent removed
+import { modules } from "./data/modules";
+import { generateMockResponse } from "./data/mockResponses";
+import ModuleSelector from "./components/ModuleSelector";
+import HistoryList from "./components/HistoryList"; // Import HistoryList
 // AgentSelector import removed
-import ChatInterface from './components/ChatInterface';
-import LoginPage from './components/LoginPage';
-import LoadingSpinner from './components/LoadingSpinner';
-import { Brain, Zap, LogOut } from 'lucide-react';
-import { onAuthChange, logOut } from './services/auth.service';
-import { User } from 'firebase/auth';
+import ChatInterface from "./components/ChatInterface";
+import LoginPage from "./components/LoginPage";
+import LoadingSpinner from "./components/LoadingSpinner";
+import { Brain, Zap, LogOut } from "lucide-react";
+import { onAuthChange, logOut } from "./services/auth.service";
+import { User } from "firebase/auth";
 
 function App() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
@@ -24,6 +24,10 @@ function App() {
     const unsubscribe = onAuthChange((user) => {
       setUser(user);
       setLoading(false);
+
+      if (selectedModule === null) {
+        handleSelectHistory("interview-scheduler");
+      }
     });
 
     return () => unsubscribe();
@@ -38,7 +42,7 @@ function App() {
       // setSelectedAgent(null) removed;
       setMessages([]);
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -51,7 +55,7 @@ function App() {
       try {
         const parsedMessages = JSON.parse(storedMessages) as Message[];
         // Convert timestamp strings back to Date objects
-        const messagesWithDateObjects = parsedMessages.map(msg => ({
+        const messagesWithDateObjects = parsedMessages.map((msg) => ({
           ...msg,
           timestamp: new Date(msg.timestamp),
         }));
@@ -70,11 +74,13 @@ function App() {
   // handleBackToModules function removed
 
   const handleSelectHistory = (moduleId: string) => {
-    const moduleToSelect = modules.find(m => m.id === moduleId);
+    const moduleToSelect = modules.find((m) => m.id === moduleId);
     if (moduleToSelect) {
       handleSelectModule(moduleToSelect); // This will also load messages
     } else {
-      console.warn(`Module with ID ${moduleId} not found from history selection.`);
+      console.warn(
+        `Module with ID ${moduleId} not found from history selection.`
+      );
       // Optionally, clear selection or show an error
       // setSelectedModule(null);
       // setMessages([]);
@@ -88,36 +94,49 @@ function App() {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
-      sender: 'user',
+      sender: "user",
       timestamp: new Date(),
-      type: 'text'
+      type: "text",
     };
 
     // Save user message to localStorage
     if (selectedModule) {
       const storageKey = `chatHistory_${selectedModule.id}`;
       const currentMessagesRaw = localStorage.getItem(storageKey);
-      const currentMessages: Message[] = currentMessagesRaw ? JSON.parse(currentMessagesRaw) : [];
-      localStorage.setItem(storageKey, JSON.stringify([...currentMessages, userMessage]));
+      const currentMessages: Message[] = currentMessagesRaw
+        ? JSON.parse(currentMessagesRaw)
+        : [];
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify([...currentMessages, userMessage])
+      );
     }
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
     // Simulate AI response delay
     setTimeout(() => {
-      const agentResponse = generateMockResponse(selectedModule ? selectedModule.id : "general", content); // Changed from selectedAgent.id
+      const agentResponse = generateMockResponse(
+        selectedModule ? selectedModule.id : "general",
+        content
+      ); // Changed from selectedAgent.id
 
       // Save agent response to localStorage
       if (selectedModule) {
         const storageKey = `chatHistory_${selectedModule.id}`;
         const currentMessagesRaw = localStorage.getItem(storageKey);
         // Ensure user message was saved, then add agent response
-        const currentMessages: Message[] = currentMessagesRaw ? JSON.parse(currentMessagesRaw) : [userMessage];
-        localStorage.setItem(storageKey, JSON.stringify([...currentMessages, agentResponse]));
+        const currentMessages: Message[] = currentMessagesRaw
+          ? JSON.parse(currentMessagesRaw)
+          : [userMessage];
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify([...currentMessages, agentResponse])
+        );
       }
 
-      setMessages(prev => [...prev, agentResponse]);
+      setMessages((prev) => [...prev, agentResponse]);
       setIsTyping(false);
     }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
   };
@@ -149,7 +168,7 @@ function App() {
                   AI Assistant Hub
                 </h1>
                 <p className="text-sm text-gray-600">
-                  HR Onboarding & Interview Scheduling Platform
+                  Interview Scheduling Platform
                 </p>
               </div>
             </div>
@@ -160,12 +179,14 @@ function App() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <img 
+                  <img
                     src={user.photoURL || undefined}
-                    alt={user.displayName || 'User'}
+                    alt={user.displayName || "User"}
                     className="w-10 h-10 rounded-full"
                   />
-                  <span className="text-sm font-medium text-gray-700">{user.displayName}</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {user.displayName}
+                  </span>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -181,18 +202,25 @@ function App() {
 
       {/* Main Content */}
       <div className="mx-auto px-6 py-8">
-        <div className="flex h-[calc(80vh)] gap-8"> {/* Changed to flex layout */}
+        <div className="flex h-[calc(80vh)] gap-8">
+          {" "}
+          {/* Changed to flex layout */}
           {/* Sidebar */}
           <div className="w-1/4">
             {selectedModule ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">{selectedModule.name}</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                  {selectedModule.name}
+                </h2>
 
                 {/* HistoryList added here, placeholder <p> removed */}
                 <div className="flex-grow overflow-y-auto mb-4">
-                  <HistoryList onSelectHistory={handleSelectHistory} modules={modules} />
+                  <HistoryList
+                    onSelectHistory={handleSelectHistory}
+                    modules={modules}
+                  />
                 </div>
-
+                {/* 
                 <button
                   onClick={() => {
                     setSelectedModule(null);
@@ -201,7 +229,7 @@ function App() {
                   className="mt-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
                 >
                   Back to Module Selection
-                </button>
+                </button> */}
               </div>
             ) : (
               // Wrapper for ModuleSelector and HistoryList when no module is selected
@@ -211,11 +239,13 @@ function App() {
                   selectedModule={selectedModule}
                   onSelectModule={handleSelectModule}
                 />
-                <HistoryList onSelectHistory={handleSelectHistory} modules={modules} />
+                <HistoryList
+                  onSelectHistory={handleSelectHistory}
+                  modules={modules}
+                />
               </div>
             )}
           </div>
-
           {/* Chat Interface Panel */}
           <div className="flex-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full overflow-hidden">
