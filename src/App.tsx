@@ -187,10 +187,12 @@ function App() {
             {selectedModule ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
                 <h2 className="text-xl font-semibold mb-4 text-gray-800">{selectedModule.name}</h2>
-                <p className="text-gray-600 mb-4 text-sm">
-                  Module selected. Agent selection will be re-integrated later. For now, you can interact with the module as a whole.
-                </p>
-                {/* Removed fixed button from here to allow HistoryList to be part of the scroll / layout */}
+
+                {/* HistoryList added here, placeholder <p> removed */}
+                <div className="flex-grow overflow-y-auto mb-4">
+                  <HistoryList onSelectHistory={handleSelectHistory} modules={modules} />
+                </div>
+
                 <button
                   onClick={() => {
                     setSelectedModule(null);
