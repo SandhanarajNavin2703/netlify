@@ -11,6 +11,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import { Brain, Zap, LogOut } from "lucide-react";
 import { onAuthChange, logOut } from "./services/auth.service";
 import { User } from "firebase/auth";
+import InterviewSchedulerDashboard from "./components/InterviewSchedulerDashboard";
 
 function App() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
@@ -19,6 +20,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "chat">("dashboard");
 
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
@@ -33,7 +35,14 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // useEffect for selectedAgent removed
+  // When module changes, reset tab to dashboard if interview-scheduler
+  useEffect(() => {
+    if (selectedModule?.id === "interview-scheduler") {
+      setActiveTab("dashboard");
+    }
+  }, [selectedModule]);
+
+  // handleLogout function removed
 
   const handleLogout = async () => {
     try {
@@ -172,6 +181,31 @@ function App() {
                 </p>
               </div>
             </div>
+            {/* Tabs for Interview Scheduler */}
+            {selectedModule?.id === "interview-scheduler" && (
+              <div className="flex items-center gap-2">
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === "dashboard"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-blue-100"
+                  }`}
+                  onClick={() => setActiveTab("dashboard")}
+                >
+                  Dashboard
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === "chat"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-blue-100"
+                  }`}
+                  onClick={() => setActiveTab("chat")}
+                >
+                  Chat
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                 <Zap className="w-4 h-4" />
@@ -203,77 +237,88 @@ function App() {
       {/* Main Content */}
       <div className="mx-auto px-6 py-8">
         <div className="flex h-[calc(80vh)] gap-8">
-          {" "}
-          {/* Changed to flex layout */}
           {/* Sidebar */}
-          <div className="w-1/4">
-            {selectedModule ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                  {selectedModule.name}
-                </h2>
-
-                {/* HistoryList added here, placeholder <p> removed */}
-                <div className="flex-grow overflow-y-auto mb-4">
+          {selectedModule?.id === "interview-scheduler" &&
+          activeTab === "chat" ? (
+            <div className="w-1/4">
+              {selectedModule ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
+                  <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                    {selectedModule.name}
+                  </h2>
+                  <div className="flex-grow overflow-y-auto mb-4">
+                    <HistoryList
+                      onSelectHistory={handleSelectHistory}
+                      modules={modules}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col space-y-4 overflow-y-auto">
+                  <ModuleSelector
+                    modules={modules}
+                    selectedModule={selectedModule}
+                    onSelectModule={handleSelectModule}
+                  />
                   <HistoryList
                     onSelectHistory={handleSelectHistory}
                     modules={modules}
                   />
                 </div>
-                {/* 
-                <button
-                  onClick={() => {
-                    setSelectedModule(null);
-                    setMessages([]); // Clear messages when going back
-                  }}
-                  className="mt-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-                >
-                  Back to Module Selection
-                </button> */}
-              </div>
-            ) : (
-              // Wrapper for ModuleSelector and HistoryList when no module is selected
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col space-y-4 overflow-y-auto">
-                <ModuleSelector
-                  modules={modules}
-                  selectedModule={selectedModule}
-                  onSelectModule={handleSelectModule}
-                />
-                <HistoryList
-                  onSelectHistory={handleSelectHistory}
-                  modules={modules}
-                />
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : null}
           {/* Chat Interface Panel */}
           <div className="flex-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full overflow-hidden">
-              <ChatInterface
-                messages={messages}
-                selectedAgent={null} // selectedAgent passed as null
-                selectedModule={selectedModule}
-                onSendMessage={handleSendMessage}
-                isTyping={isTyping}
-              />
+              {selectedModule?.id === "interview-scheduler" ? (
+                activeTab === "dashboard" ? (
+                  <InterviewSchedulerDashboard
+                    stats={{
+                      totalScheduled: 12,
+                      pendingCandidates: 3,
+                      upcomingInterviews: 5,
+                      rescheduleRequests: 1,
+                    }}
+                    managers={[
+                      { id: "m1", name: "Alice", available: true },
+                      { id: "m2", name: "Bob", available: false },
+                    ]}
+                    candidates={[
+                      {
+                        id: "c1",
+                        name: "John Doe",
+                        status: "pending",
+                        interviewTime: "2025-06-14 10:00",
+                      },
+                      // ...more candidates
+                    ]}
+                    onReschedule={(id) => alert("Reschedule " + id)}
+                    onSendReminder={(id) => alert("Send reminder to " + id)}
+                  />
+                ) : (
+                  <ChatInterface
+                    messages={messages}
+                    selectedAgent={null}
+                    selectedModule={selectedModule}
+                    onSendMessage={handleSendMessage}
+                    isTyping={isTyping}
+                  />
+                )
+              ) : (
+                <ChatInterface
+                  messages={messages}
+                  selectedAgent={null}
+                  selectedModule={selectedModule}
+                  onSendMessage={handleSendMessage}
+                  isTyping={isTyping}
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      {/* <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200 mt-8">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <p>© 2024 AI Assistant Hub. Powered by Gemini + Vertex AI</p>
-            <div className="flex gap-4">
-              <button className="hover:text-gray-800 transition-colors">Privacy Policy</button>
-              <button className="hover:text-gray-800 transition-colors">Terms of Service</button>
-              <button className="hover:text-gray-800 transition-colors">Support</button>
-            </div>
-          </div>
-        </div>
-      </footer> */}
+      {/* Footer ... */}
     </div>
   );
 }
