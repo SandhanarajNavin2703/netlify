@@ -5,6 +5,7 @@ import { generateMockResponse } from "./data/mockResponses";
 import ModuleSelector from "./components/ModuleSelector";
 import HistoryList from "./components/HistoryList"; // Import HistoryList
 // AgentSelector import removed
+import ConfigInterface from "./components/ConfigInterface";
 import ChatInterface from "./components/ChatInterface";
 import LoginPage from "./components/LoginPage";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -12,6 +13,17 @@ import { Brain, Zap, LogOut } from "lucide-react";
 import { onAuthChange, logOut } from "./services/auth.service";
 import { User } from "firebase/auth";
 import InterviewSchedulerDashboard from "./components/InterviewSchedulerDashboard";
+import StarRating from "./components/StarRating";
+import StatusSelector from "./components/StatusSelector";
+import {
+  arrayUnion,
+  collection,
+  doc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
+import { db } from "./config/firebase";
+import MultiSelectDropdown from "./components/MultiSelect";
 
 function App() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
@@ -20,7 +32,15 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "chat">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "chat" | "feedback" | "config">(
+    "dashboard"
+  );
+
+  const [status, setStatus] = useState("");
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState("");
+  const [users, setUsers] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<any[]>([]); // State for candidates, if needed
 
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
@@ -41,6 +61,24 @@ function App() {
       setActiveTab("dashboard");
     }
   }, [selectedModule]);
+
+  // If you want to fetch all users, use a separate state variable
+  // const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const querySnapshot = await getDocs(collection(db, "resumes"));
+      const usersData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      console.log("Fetched users:", usersData);
+      setUsers(usersData); // Uncomment if you want to use users elsewhere
+      // Do not call setUser here, as setUser expects a single User or null
+    };
+
+    fetchData();
+  }, []);
 
   // handleLogout function removed
 
@@ -154,6 +192,56 @@ function App() {
     return modules.reduce((total, module) => total + module.agents.length, 0);
   };
 
+  const handleRatingChange = (rating: number) => {
+    setRating(rating);
+    console.log("Selected rating:", rating);
+  };
+
+  const handleStatus = (status: string) => {
+    console.log("Selected status:", status);
+    setStatus(status);
+  };
+
+  const handleComment = (comment: string) => {
+    setComment(comment);
+    console.log("User comment:", comment);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (candidates.length === 0) {
+      alert("Please select at least one candidate.");
+      return;
+    }
+
+    const newFeedback = {
+      rating: rating,
+      selected: status.toLowerCase() === "selected",
+      round: 1, // You can make this dynamic
+      interviewer: "Dinesh", // Replace with actual user
+      comments: comment,
+    };
+
+    console.log("📋 Submitting feedback to resumes:", candidates);
+    console.log("📝 Feedback content:", newFeedback);
+
+    try {
+      const updatePromises = candidates.map((resumeId) => {
+        const resumeRef = doc(db, "resumes", resumeId);
+        return updateDoc(resumeRef, {
+          feedback: arrayUnion(newFeedback),
+        });
+      });
+
+      await Promise.all(updatePromises);
+
+      console.log("✅ Feedback added to all selected resumes.");
+      alert("Feedback submitted to all selected candidates!");
+    } catch (error) {
+      console.error("❌ Error submitting feedback:", error);
+      alert("Something went wrong while submitting feedback.");
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -204,13 +292,33 @@ function App() {
                 >
                   Chat
                 </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === "feedback"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-blue-100"
+                  }`}
+                  onClick={() => setActiveTab("feedback")}
+                >
+                  Feedback
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === "config"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-blue-100"
+                }`}
+                onClick={() => setActiveTab("config")}
+              >
+                Configrations
+                </button>
               </div>
             )}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+              {/* <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                 <Zap className="w-4 h-4" />
                 <span>{getTotalAgents()} Agents Active</span>
-              </div>
+              </div> */}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <img
@@ -296,7 +404,7 @@ function App() {
                     onReschedule={(id) => alert("Reschedule " + id)}
                     onSendReminder={(id) => alert("Send reminder to " + id)}
                   />
-                ) : (
+                ) : activeTab === "chat" ? (
                   <ChatInterface
                     messages={messages}
                     selectedAgent={null}
@@ -304,6 +412,49 @@ function App() {
                     onSendMessage={handleSendMessage}
                     isTyping={isTyping}
                   />
+                ) : activeTab === "config" ? (
+                  <ConfigInterface/>
+                ) : (
+                  <>
+                    <div className="p-6">
+                      <div className="p-6 max-w-md mx-auto">
+                        <MultiSelectDropdown
+                          options={users}
+                          placeholder="Select candidate(s)"
+                          label="Interview Panel"
+                          onChange={(selectedIds) => {
+                            console.log(
+                              "Selected IDs to save in DB:",
+                              selectedIds
+                            );
+                            setCandidates(selectedIds); // ✅ works now
+                          }}
+                        />
+                        <br />
+                        <StatusSelector
+                          label="Selection Status"
+                          options={["Selected", "Not Selected"]}
+                          onStatusChange={handleStatus}
+                          onCommentChange={handleComment}
+                        />
+                        <div className="block mt-3 text-sm font-medium text-gray-700">
+                          <StarRating
+                            label="Candidate Rating"
+                            onChange={handleRatingChange}
+                          />
+                        </div>
+                        <div className="flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => handleSubmitFeedback()}
+                            className="w-full max-w-[200px] px-4 py-2 mt-4 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
+                          >
+                            Submit
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )
               ) : (
                 <ChatInterface
