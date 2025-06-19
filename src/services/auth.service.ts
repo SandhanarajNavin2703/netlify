@@ -6,13 +6,15 @@ import {
   User
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { getOrCreateUser, UserData } from './user.service';
 
 const googleProvider = new GoogleAuthProvider();
 
-export const signInWithGoogle = async () => {
+export const signInWithGoogle = async (): Promise<{ user: User; userData: UserData }> => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    const userData = await getOrCreateUser(result.user);
+    return { user: result.user, userData };
   } catch (error) {
     console.error('Error signing in with Google:', error);
     throw error;

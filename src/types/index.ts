@@ -27,12 +27,16 @@ export interface MessageAction {
   data?: any;
 }
 
+import { Timestamp } from 'firebase/firestore';
+
 export interface ChatSession {
   id: string;
-  agentId: string;
+  moduleId: string;
+  userId: string;
+  title: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   messages: Message[];
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface OnboardingStep {
