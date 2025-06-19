@@ -183,7 +183,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
       }));
       setManagers(managersData);
     });
-// addMockCandidatesToFirestore();
+    // addMockCandidatesToFirestore();
     return () => unsubscribe();
   }, []);
 
@@ -327,7 +327,10 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
     </div>    {/* Jobs Section */}
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold">Open Positions</h3>
+        <h5 className="flex gap-3">
+          <h3 className="font-semibold">Open Positions</h3>
+          ({jobs.length})
+        </h5>
         <button
           onClick={scrollToCandidates}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
@@ -335,9 +338,9 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
           Show Candidates
         </button>
       </div>
-      <div className="flex grid-cols-3 gap-4 mb-8" style={{width: "90vw", overflowX: "auto"}}>
+      <div className="flex grid-cols-3 gap-4 mb-8" style={{ width: "90vw", overflowX: "auto" }}>
         {jobs.filter(job => job.status === 'open').map((job) => (
-          <div key={job.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200" style={{minWidth: "380px"}}>
+          <div key={job.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200" style={{ minWidth: "380px" }}>
             <h4 className="flex font-semibold text-lg mb-2">{job.job_role_name}<p className="text-sm text-gray-700 mt-2 mx-2 line-clamp-2">({job.years_of_experience_needed} Years)</p></h4>
             <p className="text-sm text-gray-600 mb-2">{job.location || "Unknown Location"}</p>
             <p className="text-sm text-gray-700 mb-3 line-clamp-2">{job.job_description}</p>
@@ -355,8 +358,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
           <div
             key={mgr.id}
             className={`px-4 py-2 rounded-lg border ${mgr.available
-                ? "bg-green-100 text-green-700"
-                : "bg-gray-100 text-gray-400"
+              ? "bg-green-100 text-green-700"
+              : "bg-gray-100 text-gray-400"
               }`}
           >
             {mgr.name || "Unknown"}
@@ -423,8 +426,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                 </td>
                 <td className="p-3">
                   <span className={`px-2 py-1 rounded-full text-xs ${interviewCandidates[candidate.id]?.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      interviewCandidates[candidate.id]?.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                        'bg-yellow-100 text-yellow-700'
+                    interviewCandidates[candidate.id]?.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                      'bg-yellow-100 text-yellow-700'
                     }`}>
                     {interviewCandidates[candidate.id]?.status || "Pending"}
                   </span>
@@ -438,8 +441,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                 </td>
                 <td className="p-3">
                   <span className={`px-2 py-1 rounded-full text-xs ${parseInt(candidate.ai_fit_score) >= 20 ? 'bg-green-100 text-green-700' :
-                      parseInt(candidate.ai_fit_score) >= 15 ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
+                    parseInt(candidate.ai_fit_score) >= 15 ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
                     }`}>
                     {candidate.ai_fit_score}%
                   </span>
@@ -489,8 +492,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                 key={number}
                 onClick={() => paginate(number)}
                 className={`px-3 py-1 rounded ${currentPage === number
-                    ? 'bg-blue-600 text-white'
-                    : 'hover:bg-gray-100'
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-gray-100'
                   }`}
               >
                 {number}
@@ -554,8 +557,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                     <label className="text-sm text-gray-500">AI Fit Score</label>
                     <div>
                       <span className={`px-3 py-1 rounded-full text-sm ${parseInt(selectedCandidate.ai_fit_score) >= 20 ? 'bg-green-100 text-green-700' :
-                          parseInt(selectedCandidate.ai_fit_score) >= 15 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
+                        parseInt(selectedCandidate.ai_fit_score) >= 15 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
                         }`}>
                         {selectedCandidate.ai_fit_score}%
                       </span>
@@ -569,8 +572,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                     <label className="text-sm text-gray-500">Status</label>
                     <div>
                       <span className={`px-2 py-1 rounded-full text-xs ${interviewCandidates[selectedCandidate.id]?.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          interviewCandidates[selectedCandidate.id]?.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                            'bg-yellow-100 text-yellow-700'
+                        interviewCandidates[selectedCandidate.id]?.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                          'bg-yellow-100 text-yellow-700'
                         }`}>
                         {interviewCandidates[selectedCandidate.id]?.status || "Pending"}
                       </span>
@@ -596,48 +599,47 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Completed Rounds Review */}
-                  {interviewCandidates[selectedCandidate.id]?.feedback && 
-                   interviewCandidates[selectedCandidate.id].feedback.length > 0 && (
-                    <div className="mt-4">
-                      <label className="text-sm text-gray-500 block mb-2">Rounds Review</label>
-                      <div className="space-y-3">
-                        {interviewCandidates[selectedCandidate.id].feedback.map((review, index) => (
-                          <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <div className="font-medium text-sm">Round {index + 1}</div>
-                                <div className="text-xs text-gray-500">
-                                  {review.interviewer_name || 'Unknown Interviewer'}
+                  {interviewCandidates[selectedCandidate.id]?.feedback &&
+                    interviewCandidates[selectedCandidate.id].feedback.length > 0 && (
+                      <div className="mt-4">
+                        <label className="text-sm text-gray-500 block mb-2">Rounds Review</label>
+                        <div className="space-y-3">
+                          {interviewCandidates[selectedCandidate.id].feedback.map((review, index) => (
+                            <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <div className="font-medium text-sm">Round {index + 1}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {review.interviewer_name || 'Unknown Interviewer'}
+                                  </div>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-xs ${review.isSelectedForNextRound === 'yes'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-red-100 text-red-700'
+                                  }`}>
+                                  {review.isSelectedForNextRound === 'yes' ? 'Passed' : 'Not Passed'}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                <div className="flex justify-between">
+                                  <span>Rating: <span className="text-yellow-600 font-medium">{review.rating_out_of_10}/10</span></span>
+                                  {review.scheduled_event && (
+                                    <span className="text-gray-500">
+                                      {new Date(review.scheduled_event.start.dateTime).toLocaleDateString()}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                review.isSelectedForNextRound === 'yes' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-red-100 text-red-700'
-                              }`}>
-                                {review.isSelectedForNextRound === 'yes' ? 'Passed' : 'Not Passed'}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                              <div className="flex justify-between">
-                                <span>Rating: <span className="text-yellow-600 font-medium">{review.rating_out_of_10}/10</span></span>
-                                {review.scheduled_event && (
-                                  <span className="text-gray-500">
-                                    {new Date(review.scheduled_event.start.dateTime).toLocaleDateString()}
-                                  </span>
-                                )}
+                              <div className="text-xs text-gray-600 mt-2 line-clamp-2">
+                                {review.feedback}
                               </div>
                             </div>
-                            <div className="text-xs text-gray-600 mt-2 line-clamp-2">
-                              {review.feedback}
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             </div>              <div>
@@ -662,8 +664,8 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                         </div>
                         <div className="text-sm">
                           <span className={`px-2 py-1 rounded-full ${feedback.isSelectedForNextRound === 'yes'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
                             }`}>
                             {feedback.isSelectedForNextRound === 'yes' ? 'Selected' : 'Not Selected'}
                           </span>
@@ -743,15 +745,18 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
 
             {/* Add Feedback Form */}
             <div className="border-t pt-6">
-              <h3 className="text-lg font-medium mb-4">Add Feedback</h3>
+              <h5 className="flex gap-3">
+                <h3 className="text-lg font-medium mb-4">Add Feedback</h3>
+               (Round {interviewCandidates[selectedCandidate.id]?.completed_rounds || '0'})
+              </h5>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Rating
                   </label>
-                  <StarRating 
-                    label="" 
-                    onChange={(rating) => setFeedback(prev => ({...prev, rating_out_of_10: rating || 0}))} 
+                  <StarRating
+                    label=""
+                    onChange={(rating) => setFeedback(prev => ({ ...prev, rating_out_of_10: rating || 0 }))}
                   />
                 </div>
                 <div>
@@ -760,7 +765,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                   </label>
                   <textarea
                     value={feedback.feedback}
-                    onChange={(e) => setFeedback(prev => ({...prev, feedback: e.target.value}))}
+                    onChange={(e) => setFeedback(prev => ({ ...prev, feedback: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={4}
                     placeholder="Enter your feedback about the candidate..."
@@ -811,16 +816,16 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                     try {
                       // Get the current completed rounds
                       const currentRounds = interviewCandidates[selectedCandidate.id]?.completed_rounds;
-                      
+
                       // Add the feedback with the correct round number
                       await addFeedbackToCandidate(selectedCandidate.id, currentRounds || "0", {
                         feedback: feedback.feedback,
-                        rating_out_of_10: feedback.rating_out_of_10*2,
+                        rating_out_of_10: feedback.rating_out_of_10 * 2,
                         isSelectedForNextRound: feedback.isSelectedForNextRound,
                         interviewer_name: currentUser.name || currentUser.email,
                         interviewer_email: currentUser.email,
                       });
-                      
+
                       alert('Feedback submitted successfully');
                       onCloseModal();
                     } catch (error) {
@@ -829,7 +834,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                     }
                   }}
                   className={`px-4 py-2 rounded-lg ${!feedback.feedback || !feedback.rating_out_of_10 || !currentUser
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >
                   Submit Feedback

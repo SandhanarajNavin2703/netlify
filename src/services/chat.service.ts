@@ -2,6 +2,8 @@ import { collection, addDoc, updateDoc, doc, query, where, getDocs, orderBy, Tim
 import { db } from '../config/firebase';
 import { Message, ChatSession } from '../types';
 
+const baseUrl = "https://good-loops-attack.loca.lt";
+
 export const createNewChat = async (moduleId: string, userId: string) => {
   const newChat = {
     moduleId,
@@ -59,7 +61,7 @@ export const sendChatMessage = async (message: string, chatId: string): Promise<
     role: role
   }
   try {
-    const response = await fetch('https://good-loops-attack.loca.lt/chat/execute', {
+    const response = await fetch(`${baseUrl}/chat/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
