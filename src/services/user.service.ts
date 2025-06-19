@@ -2,7 +2,7 @@ import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { User } from 'firebase/auth';
 
-export type UserRole = 'admin' | 'employee';
+export type UserRole = 'admin' | 'interviewer';
 
 export interface UserData {
   email: string;
@@ -19,7 +19,7 @@ export async function getOrCreateUser(authUser: User): Promise<UserData> {
     // Create new user with default role
     const userData: UserData = {
       email: authUser.email!,
-      role: 'employee',
+      role: 'interviewer',
       name: authUser.displayName || undefined,
       photoURL: authUser.photoURL || undefined,
     };

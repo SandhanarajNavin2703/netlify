@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { collection, onSnapshot, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { X, ChevronLeft, ChevronRight, Eye, ExternalLink } from 'lucide-react';
 import StarRating from './StarRating';
-import { addFeedbackToCandidate, addMockCandidatesToFirestore } from '../services/candidates.service';
+import { addFeedbackToCandidate } from '../services/candidates.service';
+import { onAuthChange } from '../services/auth.service';
+import { getOrCreateUser, UserData } from '../services/user.service';
 
 interface Job {
   id: string;
@@ -54,6 +56,7 @@ interface CandidateFeedback {
   rating_out_of_10: number;
   compensation?: string;
   scheduled_event?: ScheduledEvent;
+  round: number; // Add round number
 }
 
 interface Candidate {
@@ -128,10 +131,33 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
   }>({
     feedback: '',
     rating_out_of_10: 0,
-    isSelectedForNextRound: 'no'
+    isSelectedForNextRound: 'yes'
   });
 
+  // Add user state
+  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+
+  // Fetch current user data
+  useEffect(() => {
+    const unsubscribe = onAuthChange(async (user) => {
+      if (user) {
+        const userData = await getOrCreateUser(user);
+        setCurrentUser(userData);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const [managers, setManagers] = useState<Manager[]>([]);
+  const candidatesTableRef = useRef<HTMLDivElement>(null);
+
+  const scrollToCandidates = () => {
+    candidatesTableRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsMap, setJobsMap] = useState<Record<string, Job>>({});
@@ -298,11 +324,17 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
           <div className="text-sm text-gray-600">High AI Fit</div>
         </div>
       </div>
-    </div>
-
-    {/* Jobs Section */}
+    </div>    {/* Jobs Section */}
     <div>
-      <h3 className="font-semibold mb-4">Open Positions</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-semibold">Open Positions</h3>
+        <button
+          onClick={scrollToCandidates}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          Show Candidates
+        </button>
+      </div>
       <div className="flex grid-cols-3 gap-4 mb-8" style={{width: "90vw", overflowX: "auto"}}>
         {jobs.filter(job => job.status === 'open').map((job) => (
           <div key={job.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200" style={{minWidth: "380px"}}>
@@ -334,7 +366,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
     </div>
 
     {/* Candidates Table */}
-    <div>
+    <div ref={candidatesTableRef}>
       <h3 className="font-semibold mb-2">Candidates</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded-xl shadow-sm">
@@ -772,17 +804,21 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
               </div>              <div className="flex gap-4 mt-6">
                 <button
                   type="button"
-                  disabled={!feedback.feedback || !feedback.rating_out_of_10}
+                  disabled={!feedback.feedback || !feedback.rating_out_of_10 || !currentUser}
                   onClick={async () => {
-                    if (!selectedCandidate) return;
+                    if (!selectedCandidate || !currentUser) return;
 
-                    try {                      
-                      await addFeedbackToCandidate(selectedCandidate.id, {
+                    try {
+                      // Get the current completed rounds
+                      const currentRounds = interviewCandidates[selectedCandidate.id]?.completed_rounds;
+                      
+                      // Add the feedback with the correct round number
+                      await addFeedbackToCandidate(selectedCandidate.id, currentRounds || "0", {
                         feedback: feedback.feedback,
-                        rating_out_of_10: feedback.rating_out_of_10,
+                        rating_out_of_10: feedback.rating_out_of_10*2,
                         isSelectedForNextRound: feedback.isSelectedForNextRound,
-                        interviewer_name: 'Current User', // This should be replaced with actual user name
-                        interviewer_email: 'user@example.com', // This should be replaced with actual user email
+                        interviewer_name: currentUser.name || currentUser.email,
+                        interviewer_email: currentUser.email,
                       });
                       
                       alert('Feedback submitted successfully');
@@ -792,7 +828,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                       alert('Error submitting feedback');
                     }
                   }}
-                  className={`px-4 py-2 rounded-lg ${!feedback.feedback || !feedback.rating_out_of_10 
+                  className={`px-4 py-2 rounded-lg ${!feedback.feedback || !feedback.rating_out_of_10 || !currentUser
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >

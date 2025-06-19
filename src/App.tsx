@@ -13,6 +13,12 @@ import { Brain, Zap, LogOut } from "lucide-react";
 import { onAuthChange, logOut } from "./services/auth.service";
 import { User } from "firebase/auth";
 import InterviewSchedulerDashboard from "./components/InterviewSchedulerDashboard";
+import EmpDashboard from "./components/empDashboard";
+
+interface UserData {
+  email: string;
+  role: string;
+}
 import StarRating from "./components/StarRating";
 import StatusSelector from "./components/StatusSelector";
 import {
@@ -26,6 +32,7 @@ import {
 import { db } from "./config/firebase";
 import { sendChatMessage } from "./services/chat.service";
 import MultiSelectDropdown from "./components/MultiSelect";
+import { query, where, DocumentData } from 'firebase/firestore';
 
 function App() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
@@ -42,12 +49,34 @@ function App() {
   const [comment, setComment] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]); // State for candidates, if needed
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   useEffect(() => {
-    const unsubscribe = onAuthChange((user) => {
+    const unsubscribe = onAuthChange(async (user) => {
       setUser(user);
       setLoading(false);
 
       if (user) {
+        // Fetch user role from users collection
+        try {
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('email', '==', user.email));
+          const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+            const userData = querySnapshot.docs[0].data() as UserData;
+            setUserRole(userData.role);
+            sessionStorage.setItem('userRole', userData.role);
+            console.log('User Role:', userData.role);
+          } else {
+            console.log('No user data found for email:', user.email);
+            setUserRole(null);
+            sessionStorage.removeItem('userRole');
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole(null);
+        }
+
         // Load chat history from firebase
         getChatHistory().then(sessions => {
           setChatSessions(sessions);
@@ -453,7 +482,7 @@ function App() {
                 >
                   Agent
                 </button>
-                <button
+                {/* <button
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "feedback"
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-blue-100"
@@ -461,7 +490,8 @@ function App() {
                   onClick={() => setActiveTab("feedback")}
                 >
                   Feedback
-                </button>
+                </button> */}
+                {userRole === 'admin' && (
                 <button
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "config"
                       ? "bg-blue-600 text-white"
@@ -471,6 +501,7 @@ function App() {
                 >
                   Settings
                 </button>
+                )}
               </div>
             )}
             <div className="flex items-center gap-4">
@@ -545,21 +576,38 @@ function App() {
           <div className="flex-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full overflow-hidden">
               {selectedModule?.id === "interview-scheduler" ? (activeTab === "dashboard" ? (
-                <InterviewSchedulerDashboard
-                  stats={{
-                    totalScheduled: users.filter(c => c.interview_status === 'scheduled').length,
-                    pendingCandidates: users.filter(c => c.interview_status === 'pending').length,
-                    upcomingInterviews: users.filter(c =>
-                      c.interview_status === 'scheduled' &&
-                      c.interview_time &&
-                      new Date(c.interview_time.seconds * 1000) > new Date()
-                    ).length,
-                    rescheduleRequests: users.filter(c => c.interview_status === 'rescheduled').length,
-                  }}
-                  candidates={users}
-                  onReschedule={(id) => alert("Reschedule " + id)}
-                  onSendReminder={(id) => alert("Send reminder to " + id)}
-                />) : activeTab === "chat" ? (
+               userRole === 'admin' ? (
+                  <InterviewSchedulerDashboard
+                    stats={{
+                      totalScheduled: users.filter(c => c.interview_status === 'scheduled').length,
+                      pendingCandidates: users.filter(c => c.interview_status === 'pending').length,
+                      upcomingInterviews: users.filter(c =>
+                        c.interview_status === 'scheduled' &&
+                        c.interview_time &&
+                        new Date(c.interview_time.seconds * 1000) > new Date()
+                      ).length,
+                      rescheduleRequests: users.filter(c => c.interview_status === 'rescheduled').length,
+                    }}
+                    candidates={users}
+                    onReschedule={(id) => alert("Reschedule " + id)}
+                    onSendReminder={(id) => alert("Send reminder to " + id)}
+                  />
+                ) : (
+                  <EmpDashboard
+                    stats={{
+                      totalScheduled: users.filter(c => c.interview_status === 'scheduled').length,
+                      pendingCandidates: users.filter(c => c.interview_status === 'pending').length,
+                      upcomingInterviews: users.filter(c =>
+                        c.interview_status === 'scheduled' &&
+                        c.interview_time &&
+                        new Date(c.interview_time.seconds * 1000) > new Date()
+                      ).length,
+                      rescheduleRequests: users.filter(c => c.interview_status === 'rescheduled').length,
+                    }}
+                    candidates={users}
+                    onReschedule={(id) => alert("Reschedule " + id)}
+                    onSendReminder={(id) => alert("Send reminder to " + id)}
+                  />)) : activeTab === "chat" ? (
                   <ChatInterface
                     messages={messages}
                     selectedAgent={null}

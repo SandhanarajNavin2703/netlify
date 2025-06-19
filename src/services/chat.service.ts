@@ -52,10 +52,11 @@ export const deleteChat = async (chatId: string) => {
 
 export const sendChatMessage = async (message: string, chatId: string): Promise<{ message: string; result: any }> => {
   console.log('Sending chat message:', message, 'to chat ID:', chatId);
-  
+  const role = sessionStorage.getItem('userRole') || ''; 
   const payload = {
     message: message,
     sessionId: chatId,
+    role: role
   }
   try {
     const response = await fetch('https://good-loops-attack.loca.lt/chat/execute', {
