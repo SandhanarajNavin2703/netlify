@@ -18,6 +18,7 @@ interface JobRole {
   job_id: string;
   job_role_name: string;
   years_of_experience_needed: string;
+  status: 'active' | 'inactive';
 }
 
 type ActiveTab = 'interviewers' | 'jobs';
@@ -39,10 +40,12 @@ const ConfigInterface: React.FC = () => {
     job_description: '',
     job_id: '',
     job_role_name: '',
-    years_of_experience_needed: ''
+    years_of_experience_needed: '',
+    status: 'active',
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   // Fetch interviewers from Firestore
   const fetchInterviewers = async () => {
@@ -79,6 +82,8 @@ const ConfigInterface: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatusError(null);
+    // Validation: prevent both 'active' and 'inactive' for the same job role (not needed for single-select)
     try {
       if (activeTab === 'interviewers') {
         if (editingId) {
@@ -104,7 +109,8 @@ const ConfigInterface: React.FC = () => {
           job_description: '',
           job_id: '',
           job_role_name: '',
-          years_of_experience_needed: ''
+          years_of_experience_needed: '',
+          status: 'active',
         });
         fetchJobRoles();
       }
@@ -144,7 +150,8 @@ const ConfigInterface: React.FC = () => {
         job_description: item.job_description,
         job_id: item.job_id,
         job_role_name: item.job_role_name,
-        years_of_experience_needed: item.years_of_experience_needed
+        years_of_experience_needed: item.years_of_experience_needed,
+        status: item.status
       });
     }
   };
@@ -266,6 +273,20 @@ const ConfigInterface: React.FC = () => {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={formData.available ? 'active' : 'inactive'}
+                      onChange={e => setFormData(prev => ({ ...prev, available: e.target.value === 'active' }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
                 </div>
               ) : (
                 // Job Roles Form
@@ -308,6 +329,21 @@ const ConfigInterface: React.FC = () => {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={jobFormData.status || ''}
+                      onChange={e => setJobFormData(prev => ({ ...prev, status: e.target.value as JobRole['status'] }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Job Description
@@ -321,6 +357,9 @@ const ConfigInterface: React.FC = () => {
                     />
                   </div>
                 </div>
+              )}
+              {statusError && (
+                <div className="text-red-600 text-sm mb-2">{statusError}</div>
               )}
               <div className="flex justify-end gap-3">
                 <button
@@ -341,7 +380,8 @@ const ConfigInterface: React.FC = () => {
                         job_description: '',
                         job_id: '',
                         job_role_name: '',
-                        years_of_experience_needed: ''
+                        years_of_experience_needed: '',
+                        status: 'active',
                       });
                     }
                   }}
@@ -383,7 +423,7 @@ const ConfigInterface: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{interviewer.designation || "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex flex-wrap gap-1">
-                        {interviewer?.expertise?.map((skill, index) => (
+                        {interviewer?.expertise?.map((skill: string, index: number) => (
                           <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                             {skill}
                           </span>
@@ -427,6 +467,7 @@ const ConfigInterface: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -437,9 +478,10 @@ const ConfigInterface: React.FC = () => {
                     {/* hiding for now */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{job.job_id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{job.years_of_experience_needed}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-sm">
                       <div className="max-w-md truncate">{job.job_description}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{job.status == 'active' ? "Open" : "Closed"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center gap-2">
                         <button

@@ -477,7 +477,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                   </td>
                   <td className="p-3">
                     <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
-                      {candidate.total_experience_in_years}
+                      {candidate.total_experience_in_years || "Not specified"}
                     </span>
                   </td>
                   <td className="p-3">
