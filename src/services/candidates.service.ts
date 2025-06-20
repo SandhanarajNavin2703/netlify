@@ -31,7 +31,7 @@ export const addFeedbackToCandidate = async (candidate_id: string, currentRounds
     const currentData = querySnapshot.docs[0].data();
     const feedbackArray = currentData.feedback || [];
 
-    const targetIndex = parseInt(currentRounds) - 1;
+    const targetIndex = parseInt(currentRounds) <= 0 ? 0 : parseInt(currentRounds) - 1;
 
     // Expand array if index doesn't exist
     while (feedbackArray.length <= targetIndex) {
