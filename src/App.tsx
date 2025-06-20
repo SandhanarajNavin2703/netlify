@@ -577,7 +577,7 @@ function App() {
           <div className="flex-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full overflow-hidden">
               {selectedModule?.id === "interview-scheduler" ? (activeTab === "dashboard" ? (
-               userRole === 'recruiter' ? (
+               userRole === 'recruiter' || userRole === 'manager' ? (
                   <InterviewSchedulerDashboard
                     stats={{
                       totalScheduled: users.filter(c => c.interview_status === 'scheduled').length,
