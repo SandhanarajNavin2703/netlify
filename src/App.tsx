@@ -9,7 +9,7 @@ import ConfigInterface from "./components/ConfigInterface";
 import ChatInterface from "./components/ChatInterface";
 import LoginPage from "./components/LoginPage";
 import LoadingSpinner from "./components/LoadingSpinner";
-import { Brain, Zap, LogOut } from "lucide-react";
+import { Brain, LogOut } from "lucide-react";
 import { onAuthChange, logOut } from "./services/auth.service";
 import { User } from "firebase/auth";
 import InterviewSchedulerDashboard from "./components/InterviewSchedulerDashboard";
@@ -274,10 +274,24 @@ function App() {
 
     try {
       const newChat = await createNewChat(selectedModule.id, user.email || user.uid);
-      const updatedSessions = [newChat, ...chatSessions];
+      // Create a welcome message from the bot
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        content: `Hi! I'm your Scheduling Assistant.
+    I’ll help you with everything from scheduling interviews, creating job roles, shortlisting candidates, collecting feedback, to sending offer letters. Just tell me what you need!`,
+        sender: "agent",
+        timestamp: new Date(),
+        type: "text",
+      };
+      // Add welcome message to the chat
+      await addMessageToChat(newChat.id, welcomeMessage);
+
+      // Update chat session with welcome message
+      const updatedChat = { ...newChat, messages: [welcomeMessage] };
+      const updatedSessions = [updatedChat, ...chatSessions];
       setChatSessions(updatedSessions);
       setCurrentChatId(newChat.id);
-      setMessages([]);
+      setMessages([welcomeMessage]);
 
       // Cache in localStorage
       localStorage.setItem('chatSessions', JSON.stringify(updatedSessions));
