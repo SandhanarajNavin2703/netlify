@@ -3,7 +3,7 @@ import { Message, Module, ChatSession } from "./types";
 import { modules } from "./data/modules";
 import ModuleSelector from "./components/ModuleSelector";
 import HistoryList from "./components/HistoryList";
-import { createNewChat, getChatHistory, deleteChat, addMessageToChat, updateChatTitle } from "./services/chat.service";
+import { createNewChat, getChatHistory, deleteChat, addMessageToChat, updateChatTitle, baseUrl } from "./services/chat.service";
 // AgentSelector import removed
 import ConfigInterface from "./components/ConfigInterface";
 import ChatInterface from "./components/ChatInterface";
@@ -348,7 +348,7 @@ function App() {
   };
 
   useEffect(() => {
-    socketRef.current = io("http://13.222.18.193:5000", {
+    socketRef.current = io(baseUrl, {
       transports: ["websocket"],
       upgrade: false,
       reconnection: true,
