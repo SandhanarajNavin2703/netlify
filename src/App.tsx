@@ -393,9 +393,10 @@ function App() {
     socket.on("error", (data) => {
       setIsProcessing(false);
       setThinkingSteps([]);
+      console.error("Socket error:", data);
       const errorMessage: Message = {
         id: Date.now().toString(),
-        content: "Error: " + data.message,
+        content: "Sorry, there was an error processing your message. Please try again.",
         sender: "agent",
         timestamp: new Date(),
         type: "system",
