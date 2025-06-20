@@ -175,7 +175,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
 
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Removed: window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Fetch managers from interviewers collection
@@ -373,7 +373,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
         {/* {jobs.filter(job => job.status === 'open').map((job) => ( */}
         {jobs.map((job) => (
           <div key={job.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200" style={{ minWidth: "380px", maxHeight: "180px", overflowY: "auto" }}>
-            <h4 className="flex font-semibold text-lg mb-2">{job.job_role_name}<p className="text-sm text-gray-700 mt-2 mx-2 line-clamp-2">({job.years_of_experience_needed} Years)</p></h4>
+            <h4 className="flex font-semibold text-lg mb-2">{job.job_role_name}<p className="text-sm text-gray-700 mt-2 mx-2 line-clamp-2">({job.years_of_experience_needed})</p></h4>
             <p className="text-sm text-gray-600 mb-2">{job.location || "Unknown Location"}</p>
             <p className="text-sm text-gray-700 mb-3 line-clamp-2">{job.job_description}</p>
           </div>
@@ -384,7 +384,10 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
 
     {/* Managers */}
     <div>
-      <h3 className="font-semibold mb-2">Interviewers Availability</h3>
+      <h5 className="flex gap-3">
+        <h3 className="font-semibold mb-2">Interviewers Availability</h3>
+        ({managers.filter(mgr => mgr.available).length} / {managers.length})
+      </h5>
       <div className="flex flex-wrap gap-3">
         {managers.map((mgr) => (
           <div
@@ -400,45 +403,45 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
       </div>
     </div>
 
-    <hr/>
+    <hr />
 
     {/* Candidates Table */}
     <div ref={candidatesTableRef}>
       <div className="flex justify-between items-center mb-4">
-      <h1 className="font-semibold text-2xl">Candidates</h1>
-      {/* Filters */}
-      <div className="flex gap-4 mb-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Job Role</label>
-          <select
-            className="px-3 py-2 border rounded-md"
-            value={jobRoleFilter}
-            onChange={e => { setJobRoleFilter(e.target.value); setCurrentPage(1); }}
-          >
-            <option value="">All</option>
-            {jobs.map(job => (
-              <option key={job.id} value={job.id}>{job.job_role_name}</option>
-            ))}
-          </select>
+        <h1 className="font-semibold text-2xl">Candidates</h1>
+        {/* Filters */}
+        <div className="flex gap-4 mb-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Job Role</label>
+            <select
+              className="px-3 py-2 border rounded-md"
+              value={jobRoleFilter}
+              onChange={e => { setJobRoleFilter(e.target.value); setCurrentPage(1); candidatesTableRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+            >
+              <option value="">All</option>
+              {jobs.map(job => (
+                <option key={job.id} value={job.id}>{job.job_role_name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Interview Date</label>
+            <input
+              type="date"
+              className="px-3 py-2 border rounded-md"
+              value={interviewDateFilter}
+              onChange={e => { setInterviewDateFilter(e.target.value); setCurrentPage(1); candidatesTableRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+            />
+          </div>
+          {(jobRoleFilter || interviewDateFilter) && (
+            <button
+              className="ml-2 px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm"
+              onClick={() => { setJobRoleFilter(''); setInterviewDateFilter(''); setCurrentPage(1); }}
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Interview Date</label>
-          <input
-            type="date"
-            className="px-3 py-2 border rounded-md"
-            value={interviewDateFilter}
-            onChange={e => { setInterviewDateFilter(e.target.value); setCurrentPage(1); }}
-          />
-        </div>
-        {(jobRoleFilter || interviewDateFilter) && (
-          <button
-            className="ml-2 px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm"
-            onClick={() => { setJobRoleFilter(''); setInterviewDateFilter(''); setCurrentPage(1); }}
-          >
-            Clear Filters
-          </button>
-        )}
-      </div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded-xl shadow-sm">
@@ -505,7 +508,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                     <span className={`px-2 py-1 rounded-full text-xs ${interviewCandidates[candidate.id + candidate.job_id]?.status === 'completed' ? 'bg-green-100 text-green-700' :
                       interviewCandidates[candidate.id + candidate.job_id]?.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
                         'bg-yellow-100 text-yellow-700'
-                    }`}>
+                      }`}>
                       {interviewCandidates[candidate.id + candidate.job_id]?.status || "Pending"}
                     </span>
                   </td>
@@ -520,7 +523,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                     <span className={`px-2 py-1 rounded-full text-xs ${parseInt(candidate.ai_fit_score) >= 20 ? 'bg-green-100 text-green-700' :
                       parseInt(candidate.ai_fit_score) >= 15 ? 'bg-yellow-100 text-yellow-700' :
                         'bg-red-100 text-red-700'
-                    }`}>
+                      }`}>
                       {candidate.ai_fit_score}%
                     </span>
                   </td>
@@ -559,18 +562,39 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-              <button
-                key={number}
-                onClick={() => paginate(number)}
-                className={`px-3 py-1 rounded ${currentPage === number
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100'
-                  }`}
-              >
-                {number}
-              </button>
-            ))}
+            {/* Smart pagination: show at most 5 page buttons */}
+            {(() => {
+              const pages = [];
+              if (totalPages <= 5) {
+                for (let i = 1; i <= totalPages; i++) {
+                  pages.push(i);
+                }
+              } else {
+                if (currentPage > 3) pages.push(1);
+                if (currentPage > 4) pages.push('...');
+                for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
+                  pages.push(i);
+                }
+                if (currentPage < totalPages - 2) pages.push('...');
+                if (currentPage < totalPages - 1) pages.push(totalPages);
+              }
+              return pages.map((number, idx) =>
+                typeof number === 'number' ? (
+                  <button
+                    key={number}
+                    onClick={() => paginate(number)}
+                    className={`px-3 py-1 rounded ${currentPage === number
+                      ? 'bg-blue-600 text-white'
+                      : 'hover:bg-gray-100'
+                      }`}
+                  >
+                    {number}
+                  </button>
+                ) : (
+                  <span key={"ellipsis-" + idx} className="px-2 py-1 text-gray-400">...</span>
+                )
+              );
+            })()}
             <button
               onClick={() => paginate(currentPage + 1)}
               disabled={currentPage === totalPages}
@@ -607,13 +631,13 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
               >
                 Details
               </button>
-            { userRole != 'manager' && (  <button
+              {userRole != 'manager' && (<button
                 className={`px-4 py-2 font-medium border-b-2 transition-colors ${modalTab === 'feedback' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
                 onClick={() => setModalTab('feedback')}
               >
                 Feedback
-              </button> 
-            )}
+              </button>
+              )}
             </div>
             {/* Tab Content */}
             {modalTab === 'details' ? (
@@ -703,17 +727,17 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                             <label className="text-sm text-gray-500 block mb-2">Rounds Review</label>
                             <div className="space-y-3">
                               {interviewCandidates[selectedCandidate.id + selectedCandidate.job_id].feedback.map((review, index) => (
-                                  <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <div className="font-medium text-sm">Round {index + 1}</div>
-                                        <div className="text-xs text-gray-500">
-                                          {review.interviewer_name || 'Unknown Interviewer'}
-                                        </div>
+                                <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <div className="font-medium text-sm">Round {index + 1}</div>
+                                      <div className="text-xs text-gray-500">
+                                        {review.interviewer_name || 'Unknown Interviewer'}
                                       </div>
-                                      <span className={`px-2 py-1 rounded-full text-xs ${review.isSelectedForNextRound === 'yes'
-                                          ? 'bg-green-100 text-green-700'
-                                        : 'bg-red-100 text-red-700'
+                                    </div>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${review.isSelectedForNextRound === 'yes'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-red-100 text-red-700'
                                       }`}>
                                       {review.isSelectedForNextRound === 'yes' ? 'Passed' : 'Not Passed'}
                                     </span>
@@ -736,48 +760,48 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                             </div>
                           </div>
                         )}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Technical Skills</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCandidate.technical_skills?.split(',').map((skill, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                        {skill.trim()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                {selectedCandidate.previous_companies && selectedCandidate.previous_companies.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Previous Companies</h3>
-                    <div className="space-y-4">
-                      {selectedCandidate.previous_companies.map((company, idx) => (
-                        <div key={idx} className="bg-gray-50 p-4 rounded-lg">
-                          <div className="flex justify-between mb-2">
-                            <div className="font-medium">{company.name}</div>
-                            <div className="text-sm text-gray-500">{company.years}</div>
-                          </div>
-                          <div className="text-sm text-gray-600">{company.job_responsibilities}</div>
-                        </div>
+                    <h3 className="text-lg font-medium mb-4">Technical Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCandidate.technical_skills?.split(',').map((skill, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                          {skill.trim()}
+                        </span>
                       ))}
                     </div>
                   </div>
-                )}
-                {selectedCandidate.resume_url && (
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Resume</h3>
-                    <a
-                      href={selectedCandidate.resume_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
-                    >
-                      View Resume <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                )}
-              </div>
+                  {selectedCandidate.previous_companies && selectedCandidate.previous_companies.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Previous Companies</h3>
+                      <div className="space-y-4">
+                        {selectedCandidate.previous_companies.map((company, idx) => (
+                          <div key={idx} className="bg-gray-50 p-4 rounded-lg">
+                            <div className="flex justify-between mb-2">
+                              <div className="font-medium">{company.name}</div>
+                              <div className="text-sm text-gray-500">{company.years}</div>
+                            </div>
+                            <div className="text-sm text-gray-600">{company.job_responsibilities}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedCandidate.resume_url && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Resume</h3>
+                      <a
+                        href={selectedCandidate.resume_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                      >
+                        View Resume <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               // Feedback Tab
@@ -848,7 +872,7 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
                 <div className="border-t pt-6">
                   <h5 className="flex gap-3">
                     <h3 className="text-lg font-medium mb-4">Add Feedback</h3>
-                   (Round {interviewCandidates[selectedCandidate.id + selectedCandidate.job_id]?.completed_rounds || '0'})
+                    (Round {interviewCandidates[selectedCandidate.id + selectedCandidate.job_id]?.completed_rounds || '0'})
                   </h5>
                   <div className="space-y-4">
                     <div>

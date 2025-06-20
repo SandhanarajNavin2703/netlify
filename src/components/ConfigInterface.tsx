@@ -19,6 +19,7 @@ interface JobRole {
   job_role_name: string;
   years_of_experience_needed: string;
   status: 'active' | 'inactive';
+  location?: string; // Added location field
 }
 
 type ActiveTab = 'interviewers' | 'jobs';
@@ -42,6 +43,7 @@ const ConfigInterface: React.FC = () => {
     job_role_name: '',
     years_of_experience_needed: '',
     status: 'active',
+    location: '', // Added location to state
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
@@ -111,6 +113,7 @@ const ConfigInterface: React.FC = () => {
           job_role_name: '',
           years_of_experience_needed: '',
           status: 'active',
+          location: '', // Added location
         });
         fetchJobRoles();
       }
@@ -151,7 +154,8 @@ const ConfigInterface: React.FC = () => {
         job_id: item.job_id,
         job_role_name: item.job_role_name,
         years_of_experience_needed: item.years_of_experience_needed,
-        status: item.status
+        status: item.status,
+        location: item.location || '', // Set location on edit
       });
     }
   };
@@ -303,6 +307,19 @@ const ConfigInterface: React.FC = () => {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={jobFormData.location || ''}
+                      onChange={(e) => setJobFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., New York, Remote"
+                      required
+                    />
+                  </div>
                   {/* hiding for now */}
                   {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -382,6 +399,7 @@ const ConfigInterface: React.FC = () => {
                         job_role_name: '',
                         years_of_experience_needed: '',
                         status: 'active',
+                        location: '', // Added location
                       });
                     }
                   }}
@@ -465,6 +483,7 @@ const ConfigInterface: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role Name</th>
                   {/* hiding for now */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -477,6 +496,7 @@ const ConfigInterface: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{job.job_role_name}</td>
                     {/* hiding for now */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{job.job_id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{job.location || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{job.years_of_experience_needed}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-sm">
                       <div className="max-w-md truncate">{job.job_description}</div>
@@ -515,18 +535,39 @@ const ConfigInterface: React.FC = () => {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              {Array.from({ length: totalPages }, (_, index) => (
-                <button
-                  key={index}
-                  onClick={() => paginate(index + 1)}
-                  className={`px-3 py-1 rounded ${currentPage === index + 1
-                    ? 'bg-blue-600 text-white'
-                    : 'hover:bg-gray-100'
-                    }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+              {/* Smart pagination: show at most 5 page buttons */}
+              {(() => {
+                const pages = [];
+                if (totalPages <= 5) {
+                  for (let i = 1; i <= totalPages; i++) {
+                    pages.push(i);
+                  }
+                } else {
+                  if (currentPage > 3) pages.push(1);
+                  if (currentPage > 4) pages.push('...');
+                  for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
+                    pages.push(i);
+                  }
+                  if (currentPage < totalPages - 2) pages.push('...');
+                  if (currentPage < totalPages - 1) pages.push(totalPages);
+                }
+                return pages.map((number, idx) =>
+                  typeof number === 'number' ? (
+                    <button
+                      key={number}
+                      onClick={() => paginate(number)}
+                      className={`px-3 py-1 rounded ${currentPage === number
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-gray-100'
+                        }`}
+                    >
+                      {number}
+                    </button>
+                  ) : (
+                    <span key={"ellipsis-" + idx} className="px-2 py-1 text-gray-400">...</span>
+                  )
+                );
+              })()}
               <button
                 onClick={() => paginate(currentPage + 1)}
                 disabled={currentPage === totalPages}

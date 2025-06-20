@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Message, Module, ChatSession } from "./types";
 import { modules } from "./data/modules";
 import ModuleSelector from "./components/ModuleSelector";
@@ -33,6 +33,7 @@ import { db } from "./config/firebase";
 import { sendChatMessage } from "./services/chat.service";
 import MultiSelectDropdown from "./components/MultiSelect";
 import { query, where, DocumentData } from 'firebase/firestore';
+import { io, Socket } from "socket.io-client";
 
 function App() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
@@ -50,6 +51,9 @@ function App() {
   const [users, setUsers] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]); // State for candidates, if needed
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [thinkingSteps, setThinkingSteps] = useState<any[]>([]);
+  const socketRef = useRef<Socket | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
@@ -81,13 +85,12 @@ function App() {
         getChatHistory(user.email || user.uid).then(sessions => {
 
           setChatSessions(sessions);
-          const localHistory = localStorage.getItem('chatSessions');
+          const localHistory: ChatSession[] = JSON.parse(localStorage.getItem('chatSessions') || '[]');
           if (localHistory) {
             try {
-              const localSessions = JSON.parse(localHistory);
               // Merge Firebase and local sessions, preferring Firebase data
               const mergedSessions = [...sessions];
-              localSessions.forEach((localSession: ChatSession) => {
+              localHistory?.forEach((localSession: ChatSession) => {
                 if (!sessions.find(s => s.id === localSession.id)) {
                   mergedSessions.push(localSession);
                 }
@@ -223,6 +226,35 @@ function App() {
     }
   };
 
+   const handleDeleteChat = async (chatId: string) => {
+    try {
+      // Delete from Firebase
+      await deleteChat(chatId);
+
+      // Update local state
+      setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
+
+      // If current chat was deleted, clear messages and current chat
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setMessages([]);
+      }
+
+      // Update localStorage
+      localStorage.setItem('chatSessions', JSON.stringify(
+        chatSessions.filter(chat => chat.id !== chatId)
+      ));
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      // Still remove from local state even if Firebase delete fails
+      setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setMessages([]);
+      }
+    }
+  };
+
   const handleSelectChat = (chatId: string) => {
     console.log(chatSessions, chatId);
 
@@ -271,170 +303,111 @@ function App() {
     }
   }; const handleSendMessage = async (content: string) => {
     if (!user || !currentChatId) return;
-
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
-      sender: 'user',
+      sender: "user",
       timestamp: new Date(),
-      type: 'text'
+      type: "text",
     };
-
-    // Update local state immediately for responsiveness
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
+    setThinkingSteps([]);
+    setIsProcessing(false);
+    await addMessageToChat(currentChatId, userMessage);
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit("agent_query", {
+        query: content,
+        agent_system_type: "crew_ai",
+        session_id: currentChatId,
+      });
+    } else {
+      try {
+        const response = await sendChatMessage(content, currentChatId);
+        const agentMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response.message,
+          sender: "agent",
+          timestamp: new Date(),
+          type: "text",
+        };
+        await addMessageToChat(currentChatId, agentMessage);
+        setMessages((prev) => [...prev, agentMessage]);
+      } catch (error) {
+        const errorMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          content: "Sorry, there was an error processing your message. Please try again.",
+          sender: "agent",
+          timestamp: new Date(),
+          type: "system",
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
+    }
+    setIsTyping(false);
+  };
 
-    try {
-      // Optimistically update chat sessions
-      const updatedSessions = chatSessions.map(chat =>
-        chat.id === currentChatId
-          ? { ...chat, messages: [...chat.messages, userMessage] }
-          : chat
-      );
-      setChatSessions(updatedSessions);
+  useEffect(() => {
+    socketRef.current = io("http://13.222.18.193:5000", {
+      transports: ["websocket"],
+      upgrade: false,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+    });
 
-      // Save user message to Firebase
-      await addMessageToChat(currentChatId, userMessage);
-      console.log(currentChatId, "==================");
-
-      // Send message to API and get response
-      const response = await sendChatMessage(content, currentChatId);
-
-      // Create agent message
+    const socket = socketRef.current;
+    socket.on("connect", () => {
+      // Optionally handle connection
+    });
+    socket.on("disconnect", () => {
+      // Optionally handle disconnect
+    });
+    socket.on("processing_started", () => {
+      setIsProcessing(true);
+      setThinkingSteps([]);
+    });
+    socket.on("thinking", (data) => {
+      setThinkingSteps((prev) => [...prev, data]);
+    });
+    socket.on("agent_response", (data) => {
+      setIsProcessing(false);
+      setThinkingSteps([]);
       const agentMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response.message,
-        sender: 'agent',
+        id: Date.now().toString(),
+        content: data.response,
+        sender: "agent",
         timestamp: new Date(),
-        type: 'text'
+        type: "text",
       };
-
-      // Save agent message to Firebase
-      await addMessageToChat(currentChatId, agentMessage);
-
-      // Update local state with agent message
-      setMessages(prev => [...prev, agentMessage]);
-
-      // Update chat sessions with both messages
-      const finalSessions = chatSessions.map(chat =>
+      setMessages((prev) => [...prev, agentMessage]);
+      addMessageToChat(currentChatId!, agentMessage);
+      const finalSessions = chatSessions.map((chat) =>
         chat.id === currentChatId
-          ? { ...chat, messages: [...chat.messages, userMessage, agentMessage] }
+          ? { ...chat, messages: [...chat.messages, agentMessage] }
           : chat
       );
       setChatSessions(finalSessions);
-
-      // Cache in localStorage
-      localStorage.setItem('chatSessions', JSON.stringify(finalSessions));
-
-      // Update chat title if it's the first message
-      const chat = chatSessions.find(c => c.id === currentChatId);
-      if (chat?.messages.length === 0) {
-        const title = content.length > 30 ? content.substring(0, 30) + '...' : content;
-        await updateChatTitle(currentChatId, title);
-        setChatSessions(prev => prev.map(c =>
-          c.id === currentChatId ? { ...c, title } : c
-        ));
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Add error message
+      localStorage.setItem("chatSessions", JSON.stringify(finalSessions));
+    });
+    socket.on("error", (data) => {
+      setIsProcessing(false);
+      setThinkingSteps([]);
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: 'Sorry, there was an error processing your message. Please try again.',
-        sender: 'agent',
+        id: Date.now().toString(),
+        content: "Error: " + data.message,
+        sender: "agent",
         timestamp: new Date(),
-        type: 'system'
+        type: "system",
       };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const getTotalAgents = () => {
-    return modules.reduce((total, module) => total + module.agents.length, 0);
-  };
-
-  const handleRatingChange = (rating: number) => {
-    setRating(rating);
-    console.log("Selected rating:", rating);
-  };
-
-  const handleStatus = (status: string) => {
-    console.log("Selected status:", status);
-    setStatus(status);
-  };
-
-  const handleComment = (comment: string) => {
-    setComment(comment);
-    console.log("User comment:", comment);
-  };
-
-  const handleSubmitFeedback = async () => {
-    if (candidates.length === 0) {
-      alert("Please select at least one candidate.");
-      return;
-    }
-
-    const newFeedback = {
-      rating: rating,
-      selected: status.toLowerCase() === "selected",
-      round: 1, // You can make this dynamic
-      interviewer: "Dinesh", // Replace with actual user
-      comments: comment,
+      setMessages((prev) => [...prev, errorMessage]);
+    });
+    return () => {
+      socket.disconnect();
     };
+  }, [currentChatId]);
 
-    console.log("📋 Submitting feedback to resumes:", candidates);
-    console.log("📝 Feedback content:", newFeedback);
-
-    try {
-      const updatePromises = candidates.map((resumeId) => {
-        const resumeRef = doc(db, "resumes", resumeId);
-        return updateDoc(resumeRef, {
-          feedback: arrayUnion(newFeedback),
-        });
-      });
-
-      await Promise.all(updatePromises);
-
-      console.log("✅ Feedback added to all selected resumes.");
-      alert("Feedback submitted to all selected candidates!");
-    } catch (error) {
-      console.error("❌ Error submitting feedback:", error);
-      alert("Something went wrong while submitting feedback.");
-    }
-  };
-
-  const handleDeleteChat = async (chatId: string) => {
-    try {
-      // Delete from Firebase
-      await deleteChat(chatId);
-
-      // Update local state
-      setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
-
-      // If current chat was deleted, clear messages and current chat
-      if (currentChatId === chatId) {
-        setCurrentChatId(null);
-        setMessages([]);
-      }
-
-      // Update localStorage
-      localStorage.setItem('chatSessions', JSON.stringify(
-        chatSessions.filter(chat => chat.id !== chatId)
-      ));
-    } catch (error) {
-      console.error('Error deleting chat:', error);
-      // Still remove from local state even if Firebase delete fails
-      setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
-      if (currentChatId === chatId) {
-        setCurrentChatId(null);
-        setMessages([]);
-      }
-    }
-  };
-
+  // Pass thinkingSteps and isProcessing to ChatInterface as needed
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -616,6 +589,8 @@ function App() {
                     onSendMessage={handleSendMessage}
                     isTyping={isTyping}
                     disabled={!currentChatId}
+                    thinkingSteps={thinkingSteps}
+                    isProcessing={isProcessing}
                   />
                 ) : activeTab === "config" ? (
                   <ConfigInterface />

@@ -11,6 +11,8 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   isTyping?: boolean;
   disabled?: boolean;
+  thinkingSteps?: any[];
+  isProcessing?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -20,6 +22,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   isTyping = false,
   disabled = false,
+  thinkingSteps = [],
+  isProcessing = false,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +115,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 message={message}
               />
             ))}
+            {/* Agent thinking steps */}
+            {isProcessing && thinkingSteps.length > 0 && (
+              <div className="mb-6">
+                <div className="bg-gray-100 rounded-xl p-4 mb-2">
+                  <div className="text-xs text-gray-500 mb-2 italic">Agent Thought Process:</div>
+                  <div className="space-y-2">
+                    {thinkingSteps.map((step, idx) => (
+                      <div key={idx} className="border-l-4 pl-3 py-2 bg-white rounded-lg shadow-sm" style={{ borderColor: '#6366f1' }}>
+                        <div className="font-semibold text-indigo-600 text-xs">{step.agent}</div>
+                        <div className="text-gray-800 text-sm">{step.thought}</div>
+                        <div className="text-xs text-gray-400 mt-1">{step.timestamp ? new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Loading indicator */}
+                  <div className="flex gap-1 mt-3">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
             {isTyping && (
               <div className="flex gap-3 mb-6">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
