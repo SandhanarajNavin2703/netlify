@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Module } from '../types';
+import { ChatSession, Module } from '../types';
 import { Clock, Trash2, PlusCircle } from 'lucide-react';
-import { ChatSession } from '../services/chat.service';
 
 interface HistoryListProps {
   modules: Module[];

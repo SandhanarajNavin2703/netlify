@@ -18,10 +18,11 @@ export const createNewChat = async (moduleId: string, userId: string) => {
   return { id: chatRef.id, ...newChat };
 };
 
-export const getChatHistory = async () => {
+export const getChatHistory = async (userId: string) => {
   const chatsQuery = query(
     collection(db, 'chats'),
-    orderBy('updatedAt', 'desc')
+    where('userId', '==', userId),
+    // orderBy('updatedAt', 'desc')
   );
 
   const snapshot = await getDocs(chatsQuery);

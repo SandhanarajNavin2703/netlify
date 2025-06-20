@@ -78,7 +78,8 @@ function App() {
         }
 
         // Load chat history from firebase
-        getChatHistory().then(sessions => {
+        getChatHistory(user.email || user.uid).then(sessions => {
+
           setChatSessions(sessions);
           const localHistory = localStorage.getItem('chatSessions');
           if (localHistory) {
@@ -187,7 +188,7 @@ function App() {
     // Create a new chat session for this module
     if (user) {
       try {
-        const newChat = await createNewChat(module.id, user.uid);
+        const newChat = await createNewChat(module.id, user.email||user.uid);
         const updatedSessions = [newChat, ...chatSessions];
         setChatSessions(updatedSessions);
         setCurrentChatId(newChat.id);
@@ -240,7 +241,7 @@ function App() {
     if (!selectedModule || !user) return;
 
     try {
-      const newChat = await createNewChat(selectedModule.id, user.uid);
+      const newChat = await createNewChat(selectedModule.id, user.email || user.uid);
       const updatedSessions = [newChat, ...chatSessions];
       setChatSessions(updatedSessions);
       setCurrentChatId(newChat.id);
@@ -539,11 +540,11 @@ function App() {
           {selectedModule?.id === "interview-scheduler" &&
             activeTab === "chat" ? (
             <div className="w-1/4">
-              {selectedModule ? (<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
+              {selectedModule ? (<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col" style={{ maxHeight: 'calc(85vh)' }}>
                 <h2 className="text-xl font-semibold mb-4 text-gray-800">
                   {selectedModule.name}
                 </h2>
-                <div className="flex-grow overflow-y-auto mb-4" style={{ maxHeight: 'calc(85vh)' }}>
+                <div className="flex-grow overflow-y-auto mb-4">
                   <HistoryList
                     modules={modules}
                     chatSessions={chatSessions}
