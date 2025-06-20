@@ -492,7 +492,7 @@ function App() {
                 >
                   Feedback
                 </button> */}
-                {userRole === 'admin' && (
+                {userRole === 'recruiter' && (
                 <button
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "config"
                       ? "bg-blue-600 text-white"
@@ -577,7 +577,7 @@ function App() {
           <div className="flex-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full overflow-hidden">
               {selectedModule?.id === "interview-scheduler" ? (activeTab === "dashboard" ? (
-               userRole === 'admin' ? (
+               userRole === 'recruiter' ? (
                   <InterviewSchedulerDashboard
                     stats={{
                       totalScheduled: users.filter(c => c.interview_status === 'scheduled').length,

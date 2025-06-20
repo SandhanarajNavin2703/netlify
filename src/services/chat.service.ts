@@ -2,7 +2,7 @@ import { collection, addDoc, updateDoc, doc, query, where, getDocs, orderBy, Tim
 import { db } from '../config/firebase';
 import { Message, ChatSession } from '../types';
 
-const baseUrl = "https://good-loops-attack.loca.lt";
+const baseUrl = import.meta.env.BASE_URL || 'https://good-loops-attack.loca.lt';
 
 export const createNewChat = async (moduleId: string, userId: string) => {
   const newChat = {

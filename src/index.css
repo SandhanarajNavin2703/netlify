@@ -7,3 +7,33 @@
     height: 100%;
     overflow: auto;
 }
+
+/* Scrollbar Styling - Works in Chrome, Edge, Safari */
+* {
+  scrollbar-width: thin;              /* Firefox */
+  scrollbar-color: #c9c9c9 #f5f5f5;   /* Firefox */
+
+  /* Webkit-based browsers */
+  --scrollbar-bg: #f5f5f5;
+  --scrollbar-thumb: #c9c9c9;
+  --scrollbar-thumb-hover: #a8a8a8;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 10px;
+  border: 2px solid var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}

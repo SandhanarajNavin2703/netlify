@@ -339,8 +339,9 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
         </button>
       </div>
       <div className="flex grid-cols-3 gap-4 mb-8" style={{ width: "90vw", overflowX: "auto" }}>
-        {jobs.filter(job => job.status === 'open').map((job) => (
-          <div key={job.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200" style={{ minWidth: "380px" }}>
+        {/* {jobs.filter(job => job.status === 'open').map((job) => ( */}
+        {jobs.map((job) => (
+          <div key={job.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200" style={{ minWidth: "380px", maxHeight: "180px", overflowY: "auto" }}>
             <h4 className="flex font-semibold text-lg mb-2">{job.job_role_name}<p className="text-sm text-gray-700 mt-2 mx-2 line-clamp-2">({job.years_of_experience_needed} Years)</p></h4>
             <p className="text-sm text-gray-600 mb-2">{job.location || "Unknown Location"}</p>
             <p className="text-sm text-gray-700 mb-3 line-clamp-2">{job.job_description}</p>

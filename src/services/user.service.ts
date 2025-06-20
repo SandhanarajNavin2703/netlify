@@ -2,7 +2,7 @@ import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { User } from 'firebase/auth';
 
-export type UserRole = 'admin' | 'interviewer';
+export type UserRole = 'recruiter' | 'interviewer';
 
 export interface UserData {
   email: string;
