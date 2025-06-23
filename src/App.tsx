@@ -332,6 +332,7 @@ function App() {
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit("agent_query", {
         query: content,
+        role: userRole || "",
         agent_system_type: "crew_ai",
         session_id: currentChatId,
       });

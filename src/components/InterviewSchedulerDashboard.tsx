@@ -633,7 +633,13 @@ const InterviewSchedulerDashboard: React.FC<Props> = ({
               </button>
               {userRole != 'manager' && (<button
                 className={`px-4 py-2 font-medium border-b-2 transition-colors ${modalTab === 'feedback' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
-                onClick={() => setModalTab('feedback')}
+                onClick={() => {
+                  if (selectedCandidate?.completed_rounds <= 0 || selectedCandidate?.completed_rounds === undefined) {
+                    alert('Please complete at least one round before providing feedback.');
+                    return;
+                  };
+                  setModalTab('feedback');
+                }}
               >
                 Feedback
               </button>
