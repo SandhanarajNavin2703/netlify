@@ -22,7 +22,7 @@ const LoginPage: React.FC = () => {
             AI Assistant Hub
           </h1>
           <p className="text-gray-600 mt-2 text-center">
-            Sign in to access HR Onboarding & Interview Scheduling Platform
+            Sign in to access Interview Scheduling Platform
           </p>
         </div>
         
