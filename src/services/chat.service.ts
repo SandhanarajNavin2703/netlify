@@ -2,7 +2,7 @@ import { collection, addDoc, updateDoc, doc, query, where, getDocs, orderBy, Tim
 import { db } from '../config/firebase';
 import { Message, ChatSession } from '../types';
 
-export const baseUrl = import.meta.env.BASE_URL || 'http://13.222.18.193:5000';
+export const baseUrl = 'http://localhost:5000';
 
 export const createNewChat = async (moduleId: string, userId: string) => {
   const newChat = {
