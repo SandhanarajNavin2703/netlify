@@ -2,7 +2,7 @@ import { collection, addDoc, updateDoc, doc, query, where, getDocs, orderBy, Tim
 import { db } from '../config/firebase';
 import { Message, ChatSession } from '../types';
 
-export const baseUrl = 'http://localhost:5000';
+export const baseUrl = 'http://interviewer-agent-alb-461707030.us-east-1.elb.amazonaws.com:5000';
 
 export const createNewChat = async (moduleId: string, userId: string) => {
   const newChat = {
